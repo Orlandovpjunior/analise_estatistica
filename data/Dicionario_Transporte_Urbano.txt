@@ -1,0 +1,13 @@
+Dicionário de Dados - Transporte Urbano
+--------------------------------------
+Tempo_viagem (min): Duração total da viagem, em minutos (>=5). (Variável dependente)
+Distancia_km (km): Distância percorrida na viagem, em quilômetros.
+Velocidade_media_kmh (km/h): Velocidade média ao longo da viagem, em km/h.
+Congestionamento (0-10): Índice de congestionamento na rota (0=livre, 10=parado).
+Hora_pico (Sim/Não): Se a viagem ocorreu em horário de pico.
+Tipo_transporte (categoria): Modal utilizado (Metrô, Ônibus, CarroApp, Bicicleta).
+Paradas_intermediarias (contagem): Número de paradas realizadas durante o trajeto.
+Chuva_mm (mm/h): Intensidade de chuva aproximada durante a viagem.
+Dia_semana (categoria): Dia da semana em que ocorreu a viagem (Seg..Dom).
+Ocorrencia_acidente (Sim/Não): Se houve acidente no trajeto.
+Tempo_espera (min): Tempo de espera antes/ao longo da viagem.
