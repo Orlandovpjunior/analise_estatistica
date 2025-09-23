@@ -1,30 +1,185 @@
 ---
-title: "Análise Transporte Urbano"
+title: "Relatório de Análise de Regressão Múltipla: Fatores que Influenciam o Tempo de Viagem no Transporte Urbano"
+subtitle: "Disciplina de Estatística Aplicada"
 author: "Orlando Junior"
-date: "2025-09-10"
-output: html_document
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+lang: pt-BR
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# Chunk de configuração inicial. Não mostra no relatório final.
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+
+# Carregando os pacotes que serão utilizados na análise
+library(tidyverse)
+library(readr)    
+library(skimr)    
+library(corrplot) 
+library(car)      
+library(easystats)
+library(gtsummary)
 ```
 
-## R Markdown
+### **1. Introdução**
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+A mobilidade urbana é um tema central nas discussões sobre a qualidade de vida nas cidades. O tempo gasto em deslocamentos diários afeta diretamente a rotina, a produtividade e o bem-estar da população. Compreender os fatores que determinam a duração de uma viagem é, portanto, fundamental para o planejamento de infraestrutura, a gestão de tráfego e o desenvolvimento de políticas públicas mais eficientes.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Este relatório se propõe a analisar, por meio de técnicas de regressão linear múltipla, os principais fatores que influenciam o tempo de viagem no transporte urbano. Utilizando um conjunto de dados sobre deslocamentos, investigaremos como variáveis como a Distancia_km percorrida, o nível de Congestionamento, a ocorrência de viagens em Hora_pico, o Tipo_transporte utilizado e outras condições adversas, como Chuva_mm e a Ocorrencia_acidente, se relacionam com a variável dependente Tempo_viagem. O objetivo final é construir um modelo estatístico capaz de explicar e prever a duração dos percursos, quantificando o impacto de cada um desses fatores.
 
-```{r cars}
-summary(cars)
+### **2. Descrição da Base de Dados**
+A análise será realizada sobre a base de dados "Transporte Urbano", que visa estudar os fatores que influenciam o tempo de deslocamento. Os dados estão organizados em uma subpasta chamada data para manter o projeto organizado.
+
+A base de dados é composta por 1.100 observações (viagens) e 11 variáveis, que são descritas a seguir:
+
+- Tempo_viagem: Tempo total gasto na viagem (em minutos).
+
+- Distancia_km: Distância total do percurso (em quilômetros).
+
+- Velocidade_media_kmh: Velocidade média desenvolvida durante a viagem (em km/h).
+
+- Congestionamento: Nível de congestionamento em uma escala (ex: de 0 a 10).
+
+- Hora_pico: Variável categórica que indica se a viagem ocorreu em horário de pico (Sim ou Não).
+
+- Tipo_transporte: Meio de transporte utilizado na viagem (Ônibus, Metrô, etc.).
+
+- Paradas_intermediarias: Número de paradas realizadas durante o trajeto.
+
+- Chuva_mm: Volume de precipitação de chuva durante a viagem (em milímetros).
+
+- Dia_semana: Dia da semana em que a viagem foi realizada.
+
+- Ocorrencia_acidente: Variável categórica que indica se houve um acidente na rota (Sim ou Não).
+
+- Tempo_espera: Tempo de espera pelo transporte (em minutos).
+
+A seguir, apresentamos a estrutura técnica dos dados carregados no ambiente R para verificação dos tipos de cada variável.
+
+```{r carregar_dados}
+
+library(readxl)
+library(dplyr)
+
+dados <- read_excel("./data/Transporte_Urbano.xlsx")
+
+glimpse(dados)
+
 ```
 
-## Including Plots
+### **3. Análise Exploratória de Dados**
 
-You can also embed plots, for example:
+Nesta seção, realizaremos uma análise exploratória para compreender as características fundamentais do nosso conjunto de dados. O objetivo é verificar a consistência dos dados, identificar a presença de valores ausentes e outliers, e analisar a distribuição das variáveis que podem influenciar o tempo de viagem.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#### **3.1 Investigação de Dados Ausentes**
+
+A primeira etapa da análise de consistência é verificar a presença de dados ausentes (também conhecidos como `NA` ou *missing values*). Para isso, utilizamos um conjunto de funções que nos permitem quantificar e visualizar esses dados.
+
+```{r investigar_valores_ausentes, echo=FALSE}
+library(skimr)
+library(naniar)
+
+colSums(is.na(dados))
+gg_miss_var(dados)
+skim(dados)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+**Análise dos Resultados:**
+
+A análise dos outputs revela informações cruciais sobre a integridade dos dados:
+
+1.  **Identificação:** As funções `colSums(is.na(dados))` e `skim(dados)` mostram que 5 das 11 variáveis do nosso conjunto de dados possuem valores ausentes. As variáveis afetadas são:
+
+      * `Distancia_km`
+      * `Velocidade_media_kmh`
+      * `Congestionamento`
+      * `Chuva_mm`
+      * `Tempo_espera`
+
+2.  **Quantificação:** Todas as cinco variáveis afetadas possuem **exatamente 11 valores ausentes**. O relatório da função `skim(dados)` mostra que o nosso dataset possui 1100 linhas no total. Portanto, os 11 casos ausentes representam **1%** do total de observações (`11 / 1100 = 0.01`).
+
+3.  **Padrão de Ausência:** O fato de ser o mesmo número de `NAs` para todas essas variáveis sugere fortemente que os dados estão faltando para as **mesmas 11 viagens**. O gráfico gerado por `gg_miss_var(dados)` visualiza essa contagem, confirmando quais variáveis são as incompletas.
+
+#### **3.2 Correção da Base de Dados**
+
+Conforme a orientação da disciplina, é necessário sugerir uma correção para os problemas encontrados. Dado que a quantidade de dados ausentes é muito pequena (apenas 1% do total), a abordagem mais segura e direta é a **remoção completa das observações (linhas)** que contêm esses valores. Essa estratégia, conhecida como *listwise deletion*, evita a inserção de ruído ou viés que métodos de substituição (imputação) poderiam causar, e a perda de 1% dos dados não impactará significativamente o poder do nosso modelo de regressão.
+
+Abaixo, executamos o procedimento de limpeza e verificamos se a remoção foi bem-sucedida.
+
+```{r correcao_valores_ausentes}
+cat("Número de linhas ANTES da limpeza:", nrow(dados), "\n")
+dados_limpos <- na.omit(dados)
+cat("Número de linhas DEPOIS da limpeza:", nrow(dados_limpos), "\n")
+cat("\nVerificação de NAs após a limpeza:\n")
+colSums(is.na(dados_limpos))
+```
+
+**Conclusão da Etapa:**
+
+Após o procedimento, a base de dados foi corrigida. As 11 linhas com dados faltantes foram removidas, resultando em um novo conjunto de dados chamado `dados_limpos` com **1089 observações completas**. A partir deste ponto, todas as análises subsequentes (análise de outliers, correlação e modelagem) serão realizadas utilizando esta base de dados limpa.
+
+#### **3.3 Análise de Outliers e Valores Inconsistentes**
+Após a limpeza dos dados ausentes, o próximo passo é investigar a presença de outliers e valores inconsistentes que possam distorcer a análise e o modelo de regressão. A forma mais eficaz de visualizar outliers é através de boxplots.
+
+```{r remocao_outliers}
+# Vamos gerar os boxplots usando a base de dados limpa (sem NAs)
+# para ter uma visão clara dos outliers remanescentes.
+dados_limpos %>%
+  select(where(is.numeric)) %>%
+  tidyr::pivot_longer(everything(), names_to = "variavel", values_to = "valor") %>%
+  ggplot(aes(x = variavel, y = valor, fill = variavel)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 4) +
+  facet_wrap(~ variavel, scales = "free", ncol = 4) +
+  labs(
+    title = "Figura 3: Boxplots para Identificação de Outliers",
+    x = "",
+    y = "Valores"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), legend.position = "none")
+```
+
+**Análise dos Resultados:**
+
+A análise dos boxplots e da tabela de resumo estatístico (skim) revela dois problemas principais:
+
+1. Valores Inconsistentes: Foram identificados valores mínimos negativos para Distancia_km e Tempo_espera. Como essas métricas não podem ser negativas, tratam-se de erros de entrada de dados que precisam ser corrigidos.
+
+2. Outliers Potenciais: Diversas variáveis, como Tempo_viagem, Chuva_mm e Paradas_intermediarias, apresentam múltiplos pontos (marcados em vermelho) acima do limite superior do boxplot. Estes são outliers que, embora possam ser valores reais e possíveis (uma viagem muito longa, um dia de chuva extrema), têm o potencial de influenciar desproporcionalmente o nosso modelo.
+
+#### **3.4 Estratégia de Tratamento**
+
+A nossa estratégia será dividida em duas etapas:
+
+1. Correção dos Erros: Primeiro, vamos tratar os valores impossíveis (negativos), convertendo-os para NA. Em seguida, vamos reaplicar a remoção de linhas com NA para garantir que nosso dataset final não contenha esses erros.
+
+``` {r estrategia}
+# Vamos usar o 'dados_limpos' que já não tinha os NAs originais.
+# Etapa 1: Substituir valores negativos por NA
+dados_corrigidos <- dados_limpos %>%
+  mutate(
+    Distancia_km = ifelse(Distancia_km < 0, NA, Distancia_km),
+    Tempo_espera = ifelse(Tempo_espera < 0, NA, Tempo_espera)
+  )
+
+# Etapa 2: Remover as linhas que agora contêm os novos NAs
+dados_final <- na.omit(dados_corrigidos)
+
+# Verificando as dimensões dos dataframes para ver o resultado da limpeza
+cat("Linhas antes da correção de erros:", nrow(dados_limpos), "\n")
+cat("Linhas no dataset final (pós-correção):", nrow(dados_final), "\n")
+``` 
+- **Interpretação da Correção:**
+A execução do código de limpeza mostra que, partindo de um conjunto de dados com 1047 observações, um total de 9 linhas que continham valores negativos inválidos foram removidas. O nosso dataset final para análise, dados_final, agora possui 1038 observações completas e consistentes.
+
+2. Decisão sobre os Outliers Extremos:
+
+Para os outliers restantes (valores muito altos, mas plausíveis), a melhor prática não é removê-los imediatamente, pois eles podem representar uma variabilidade real e importante do fenômeno que estamos estudando. A remoção arbitrária poderia enviesar nosso modelo.
+
+Portanto, manteremos esses outliers por enquanto. Na etapa de diagnóstico do modelo de regressão (Seção 7), avaliaremos a real influência desses pontos. Se for constatado que eles violam os pressupostos do modelo (por exemplo, através da análise de resíduos ou da Distância de Cook), poderemos então considerar estratégias mais avançadas, como a transformação das variáveis (ex: aplicação de logaritmo) ou a remoção justificada dos casos mais influentes.
+
+A partir de agora, todas as análises serão feitas com o dataset dados_final.
