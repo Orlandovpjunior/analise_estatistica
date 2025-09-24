@@ -183,3 +183,133 @@ Para os outliers restantes (valores muito altos, mas plausíveis), a melhor prá
 Portanto, manteremos esses outliers por enquanto. Na etapa de diagnóstico do modelo de regressão (Seção 7), avaliaremos a real influência desses pontos. Se for constatado que eles violam os pressupostos do modelo (por exemplo, através da análise de resíduos ou da Distância de Cook), poderemos então considerar estratégias mais avançadas, como a transformação das variáveis (ex: aplicação de logaritmo) ou a remoção justificada dos casos mais influentes.
 
 A partir de agora, todas as análises serão feitas com o dataset dados_final.
+
+## 4. Análises univariadas e bivariadas
+
+Nesta etapa, foram realizadas análises descritivas (univariadas) e exploratórias (bivariadas) com o objetivo de compreender melhor o comportamento das variáveis explicativas em relação à variável resposta **Tempo_viagem**.
+
+### 4.1 Análise univariada
+
+As variáveis numéricas apresentaram os seguintes comportamentos principais:
+
+- **Congestionamento**, **Velocidade_media_kmh**, **Tempo_espera**, **Distancia_km** e **Paradas_intermediarias** exibiram forte variabilidade, com distribuições moderadamente assimétricas e presença de outliers.  
+- **Chuva_mm** apresentou assimetria acentuada, com predominância de valores zero e poucos registros extremos (até 23 mm).  
+- **Tempo_viagem** mostrou distribuição aproximadamente normal, mas com cauda longa à direita (máximo de 111 minutos).
+
+Esses padrões sugerem que, embora algumas variáveis numéricas apresentem valores extremos, eles são plausíveis e devem ser mantidos para preservar a variabilidade do fenômeno estudado.
+
+```{r}
+library(skimr)
+library(ggplot2)
+library(dplyr)
+
+# Análise univariada
+skim(dados_final)
+
+# Histogramas para variáveis numéricas
+num_vars <- names(dados_final %>% select(where(is.numeric)))
+for(v in num_vars){
+  print(
+    ggplot(dados_final, aes_string(x = v)) +
+      geom_histogram(bins = 30, fill = "skyblue", color = "black") +
+      ggtitle(paste("Histograma:", v))
+  )
+}
+
+```
+
+### 4.2 Análise bivariada
+
+Foram analisadas as relações entre a variável resposta (**Tempo_viagem**) e as variáveis explicativas, tanto numéricas quanto categóricas.
+
+#### 4.2.1 Correlações (numéricas)
+
+A análise de correlação de Pearson mostrou os seguintes coeficientes em relação ao **Tempo_viagem**:
+
+- **Congestionamento**: r = 0,69 (forte e positiva)  
+- **Velocidade_media_kmh**: r = -0,67 (forte e negativa)  
+- **Tempo_espera**: r = 0,60 (forte e positiva)  
+- **Distancia_km**: r = 0,53 (moderada/forte e positiva)  
+- **Paradas_intermediarias**: r = 0,46 (moderada e positiva)  
+- **Chuva_mm**: r ≈ 0 (não significativa)  
+
+Adicionalmente, observou-se correlação elevada entre algumas variáveis explicativas:  
+- **Congestionamento × Velocidade_media_kmh** (r = -0,80)  
+- **Congestionamento × Tempo_espera** (r = 0,57)  
+- **Velocidade_media_kmh × Tempo_espera** (r = -0,55)  
+
+Esses resultados indicam risco de multicolinearidade, em especial entre variáveis ligadas ao trânsito.
+
+```{r}
+# Calcular a matriz de correlação
+cor_matrix <- cor(dados_final %>% select(where(is.numeric)), 
+                  use = "complete.obs")
+
+# Extrair correlações com a variável resposta Tempo_viagem
+corr_with_response <- cor_matrix[, "Tempo_viagem", drop = FALSE]
+corr_with_response <- data.frame(
+  Variavel = rownames(corr_with_response),
+  Correlacao = corr_with_response[, 1]
+) %>% 
+  filter(Variavel != "Tempo_viagem") %>%  # Remover a própria variável resposta
+  arrange(desc(abs(Correlacao)))
+
+# Exibir as correlações
+print(corr_with_response)
+
+# Gráfico de correlações
+library(corrplot)
+corrplot(cor_matrix, method = "color", type = "upper", 
+         addCoef.col = "black", number.cex = 0.7,
+         tl.cex = 0.8, tl.col = "black")
+```
+
+#### 4.2.2 Variáveis categóricas
+
+Os testes estatísticos mostraram associações significativas entre as variáveis categóricas e o tempo de viagem:
+
+- **Hora_pico**: viagens em horário de pico apresentaram média de 52 min contra 31 min fora do pico (p < 0,001).  
+- **Ocorrencia_acidente**: presença de acidente elevou a média para 61 min contra 38 min sem acidentes (p < 0,001).  
+- **Tipo_transporte**: diferenças significativas entre os modais (p < 0,001), com Ônibus apresentando tempos mais longos que CarroApp, Bicicleta e Metrô.  
+- **Dia_semana**: diferenças significativas (p < 0,001), sugerindo maior duração em dias úteis em comparação a fins de semana.
+
+### 4.3 Multicolinearidade
+
+A verificação por meio do Fator de Inflação da Variância (VIF) indicou valores elevados para **Congestionamento** (GVIF_adj = 5,1) e **Velocidade_media_kmh** (GVIF_adj = 4,8).  
+Isso confirma a presença de multicolinearidade entre essas variáveis.
+
+Foram então estimados dois modelos alternativos:
+
+```{r}
+# Verificar se os modelos já foram criados
+if(!exists("model_full")) {
+  # Criar modelos se não existirem
+  model_full <- lm(Tempo_viagem ~ ., data = dados_final)
+  model_A <- lm(Tempo_viagem ~ . - Velocidade_media_kmh, data = dados_final)
+  model_B <- lm(Tempo_viagem ~ . - Congestionamento, data = dados_final)
+}
+
+# Verificar VIF e AIC
+library(car)
+vif_results <- vif(model_full)
+print(vif_results)
+
+# Comparar AIC dos modelos
+AIC_comparison <- AIC(model_A, model_B)
+print(AIC_comparison)
+```
+
+- **Modelo A (com Congestionamento, sem Velocidade_media_kmh):** R² ajustado = 0,904; AIC = 6679.  
+- **Modelo B (com Velocidade_media_kmh, sem Congestionamento):** R² ajustado = 0,901; AIC = 6714.  
+
+O **Modelo A** apresentou melhor desempenho (maior R² ajustado e menor AIC).  
+Assim, optou-se por manter **Congestionamento** como variável explicativa no modelo final, em detrimento de **Velocidade_media_kmh**.
+
+---
+
+**Interpretação final:**  
+As análises univariadas e bivariadas confirmaram que o tempo de viagem é influenciado principalmente pelo nível de congestionamento, tempo de espera, distância percorrida e número de paradas intermediárias, além de fatores contextuais como ocorrência de acidentes, horário de pico, tipo de transporte e dia da semana.  
+A variável **Chuva_mm** não apresentou associação significativa com a resposta.  
+O problema de multicolinearidade foi resolvido mantendo apenas a variável **Congestionamento**, garantindo maior estabilidade ao modelo.
+
+
