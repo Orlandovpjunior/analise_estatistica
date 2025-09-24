@@ -65,7 +65,7 @@ A seguir, apresentamos a estrutura técnica dos dados carregados no ambiente R p
 library(readxl)
 library(dplyr)
 
-dados <- read_excel("./data/Transporte_Urbano.xlsx")
+dados <- read_excel("Transporte_Urbano.xlsx")
 
 glimpse(dados)
 
