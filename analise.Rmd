@@ -1,7 +1,7 @@
 ---
 title: "Relatório de Análise de Regressão Múltipla: Fatores que Influenciam o Tempo de Viagem no Transporte Urbano"
 subtitle: "Disciplina de Estatística Aplicada"
-author: "Orlando Junior"
+author: "Orlando Junior e Jhonata Andrade"
 date: "`r format(Sys.Date(), '%d de %B de %Y')`"
 output: 
   html_document:
@@ -25,13 +25,13 @@ library(easystats)
 library(gtsummary)
 ```
 
-### **1. Introdução**
+## **1. Introdução**
 
 A mobilidade urbana é um tema central nas discussões sobre a qualidade de vida nas cidades. O tempo gasto em deslocamentos diários afeta diretamente a rotina, a produtividade e o bem-estar da população. Compreender os fatores que determinam a duração de uma viagem é, portanto, fundamental para o planejamento de infraestrutura, a gestão de tráfego e o desenvolvimento de políticas públicas mais eficientes.
 
 Este relatório se propõe a analisar, por meio de técnicas de regressão linear múltipla, os principais fatores que influenciam o tempo de viagem no transporte urbano. Utilizando um conjunto de dados sobre deslocamentos, investigaremos como variáveis como a Distancia_km percorrida, o nível de Congestionamento, a ocorrência de viagens em Hora_pico, o Tipo_transporte utilizado e outras condições adversas, como Chuva_mm e a Ocorrencia_acidente, se relacionam com a variável dependente Tempo_viagem. O objetivo final é construir um modelo estatístico capaz de explicar e prever a duração dos percursos, quantificando o impacto de cada um desses fatores.
 
-### **2. Descrição da Base de Dados**
+## **2. Descrição da Base de Dados**
 A análise será realizada sobre a base de dados "Transporte Urbano", que visa estudar os fatores que influenciam o tempo de deslocamento. Os dados estão organizados em uma subpasta chamada data para manter o projeto organizado.
 
 A base de dados é composta por 1.100 observações (viagens) e 11 variáveis, que são descritas a seguir:
@@ -71,11 +71,11 @@ glimpse(dados)
 
 ```
 
-### **3. Análise Exploratória de Dados**
+## **3. Análise Exploratória de Dados**
 
 Nesta seção, realizaremos uma análise exploratória para compreender as características fundamentais do nosso conjunto de dados. O objetivo é verificar a consistência dos dados, identificar a presença de valores ausentes e outliers, e analisar a distribuição das variáveis que podem influenciar o tempo de viagem.
 
-#### **3.1 Investigação de Dados Ausentes**
+### **3.1 Investigação de Dados Ausentes**
 
 A primeira etapa da análise de consistência é verificar a presença de dados ausentes (também conhecidos como `NA` ou *missing values*). Para isso, utilizamos um conjunto de funções que nos permitem quantificar e visualizar esses dados.
 
@@ -104,7 +104,7 @@ A análise dos outputs revela informações cruciais sobre a integridade dos dad
 
 3.  **Padrão de Ausência:** O fato de ser o mesmo número de `NAs` para todas essas variáveis sugere fortemente que os dados estão faltando para as **mesmas 11 viagens**. O gráfico gerado por `gg_miss_var(dados)` visualiza essa contagem, confirmando quais variáveis são as incompletas.
 
-#### **3.2 Correção da Base de Dados**
+### **3.2 Correção da Base de Dados**
 
 Conforme a orientação da disciplina, é necessário sugerir uma correção para os problemas encontrados. Dado que a quantidade de dados ausentes é muito pequena (apenas 1% do total), a abordagem mais segura e direta é a **remoção completa das observações (linhas)** que contêm esses valores. Essa estratégia, conhecida como *listwise deletion*, evita a inserção de ruído ou viés que métodos de substituição (imputação) poderiam causar, e a perda de 1% dos dados não impactará significativamente o poder do nosso modelo de regressão.
 
@@ -122,7 +122,7 @@ colSums(is.na(dados_limpos))
 
 Após o procedimento, a base de dados foi corrigida. As 11 linhas com dados faltantes foram removidas, resultando em um novo conjunto de dados chamado `dados_limpos` com **1089 observações completas**. A partir deste ponto, todas as análises subsequentes (análise de outliers, correlação e modelagem) serão realizadas utilizando esta base de dados limpa.
 
-#### **3.3 Análise de Outliers e Valores Inconsistentes**
+### **3.3 Análise de Outliers e Valores Inconsistentes**
 Após a limpeza dos dados ausentes, o próximo passo é investigar a presença de outliers e valores inconsistentes que possam distorcer a análise e o modelo de regressão. A forma mais eficaz de visualizar outliers é através de boxplots.
 
 ```{r remocao_outliers}
@@ -151,7 +151,7 @@ A análise dos boxplots e da tabela de resumo estatístico (skim) revela dois pr
 
 2. Outliers Potenciais: Diversas variáveis, como Tempo_viagem, Chuva_mm e Paradas_intermediarias, apresentam múltiplos pontos (marcados em vermelho) acima do limite superior do boxplot. Estes são outliers que, embora possam ser valores reais e possíveis (uma viagem muito longa, um dia de chuva extrema), têm o potencial de influenciar desproporcionalmente o nosso modelo.
 
-#### **3.4 Estratégia de Tratamento**
+### **3.4 Estratégia de Tratamento**
 
 A nossa estratégia será dividida em duas etapas:
 
@@ -184,11 +184,11 @@ Portanto, manteremos esses outliers por enquanto. Na etapa de diagnóstico do mo
 
 A partir de agora, todas as análises serão feitas com o dataset dados_final.
 
-## 4. Análises univariadas e bivariadas
+## **4. Análises univariadas e bivariadas**
 
 Nesta etapa, foram realizadas análises descritivas (univariadas) e exploratórias (bivariadas) com o objetivo de compreender melhor o comportamento das variáveis explicativas em relação à variável resposta **Tempo_viagem**.
 
-### 4.1 Análise univariada
+### **4.1 Análise univariada**
 
 As variáveis numéricas apresentaram os seguintes comportamentos principais:
 
@@ -218,11 +218,11 @@ for(v in num_vars){
 
 ```
 
-### 4.2 Análise bivariada
+### **4.2 Análise bivariada**
 
 Foram analisadas as relações entre a variável resposta (**Tempo_viagem**) e as variáveis explicativas, tanto numéricas quanto categóricas.
 
-#### 4.2.1 Correlações (numéricas)
+#### **4.2.1 Correlações (numéricas)**
 
 A análise de correlação de Pearson mostrou os seguintes coeficientes em relação ao **Tempo_viagem**:
 
@@ -264,7 +264,7 @@ corrplot(cor_matrix, method = "color", type = "upper",
          tl.cex = 0.8, tl.col = "black")
 ```
 
-#### 4.2.2 Variáveis categóricas
+#### **4.2.2 Variáveis categóricas**
 
 Os testes estatísticos mostraram associações significativas entre as variáveis categóricas e o tempo de viagem:
 
@@ -273,7 +273,7 @@ Os testes estatísticos mostraram associações significativas entre as variáve
 - **Tipo_transporte**: diferenças significativas entre os modais (p < 0,001), com Ônibus apresentando tempos mais longos que CarroApp, Bicicleta e Metrô.  
 - **Dia_semana**: diferenças significativas (p < 0,001), sugerindo maior duração em dias úteis em comparação a fins de semana.
 
-### 4.3 Multicolinearidade
+### **4.3 Multicolinearidade**
 
 A verificação por meio do Fator de Inflação da Variância (VIF) indicou valores elevados para **Congestionamento** (GVIF_adj = 5,1) e **Velocidade_media_kmh** (GVIF_adj = 4,8).  
 Isso confirma a presença de multicolinearidade entre essas variáveis.
@@ -312,4 +312,284 @@ As análises univariadas e bivariadas confirmaram que o tempo de viagem é influ
 A variável **Chuva_mm** não apresentou associação significativa com a resposta.  
 O problema de multicolinearidade foi resolvido mantendo apenas a variável **Congestionamento**, garantindo maior estabilidade ao modelo.
 
+## **5. Ajuste do modelo inicial**
 
+Nesta etapa procedeu-se ao ajuste de um modelo inicial contendo todas as variáveis explicativas disponíveis, com o objetivo de verificar o ajuste geral, identificar problemas de especificação e diagnosticar potenciais fontes de instabilidade (por exemplo, multicolinearidade).
+
+```{r ajuste_modelo_inicial, echo=TRUE}
+# Ajuste do modelo com todas as variáveis candidatas
+model_full <- lm(Tempo_viagem ~ Distancia_km + Congestionamento + Velocidade_media_kmh +
+                   Hora_pico + Tipo_transporte + Paradas_intermediarias + Chuva_mm +
+                   Dia_semana + Ocorrencia_acidente + Tempo_espera,
+                 data = dados_final)
+
+# Sumário e diagnósticos iniciais
+summary(model_full)
+AIC(model_full)
+car::vif(model_full)    # verificar multicolinearidade
+```
+---
+
+**Interpretação / observações:**
+
+- O model_full fornece uma referência inicial do ajuste com todas as covariáveis.
+
+- A verificação do VIF indicou valores elevados para algumas variáveis relacionadas ao tráfego (em particular Congestionamento e Velocidade_media_kmh), sugerindo risco de multicolinearidade entre essas medidas correlacionadas. No nosso conjunto os GVIF ajustados observados foram altos para essas variáveis (ex.: GVIF_adj ≈ 5,1 para Congestionamento e ≈ 4,8 para Velocidade_media_kmh), o que motivou a avaliação de modelos alternativos sem inclusão simultânea dessas duas variáveis.
+
+- Com base nesse ajuste inicial, procedeu-se à estimação de modelos alternativos (ver seção 6) para resolver o problema de colinearidade e obter um modelo mais estável e interpretável.
+
+## **6. Seleção do melhor modelo**
+
+A seleção do modelo foi pautada em critérios estatísticos (AIC, R² ajustado) e em considerações práticas (interpretabilidade e multicolinearidade). Foram estimados dois modelos alternativos principais:
+
+- **Modelo A:** inclui **Congestionamento** e exclui **Velocidade_media_kmh**.  
+- **Modelo B:** inclui **Velocidade_media_kmh** e exclui **Congestionamento**.
+
+```{r comparar_modelos, echo=TRUE}
+# Exemplo: (esses modelos foram calculados previamente no ambiente)
+# model_A e model_B já existem no ambiente conforme Rmd anterior.
+summary(model_A)
+summary(model_B)
+
+# Comparar AIC e R2 ajustado
+AIC(model_A, model_B)
+broom::glance(model_A)$adj.r.squared
+broom::glance(model_B)$adj.r.squared
+
+# Seleção automática (opcional) a partir do modelo completo
+# (apenas como verificação adicional)
+library(MASS)
+step_model <- stepAIC(model_full, direction = "both", trace = FALSE)
+step_model
+```
+
+---
+
+**Resultado e justificativa:**
+
+- A comparação entre os dois modelos mostrou que o Modelo A apresentou melhor desempenho (R² ajustado maior e AIC menor): R² ajustado ≈ 0.904 vs 0.901; AIC ≈ 6679 (Modelo A) vs 6714 (Modelo B).
+
+- Além disso, o Modelo A evita a multicolinearidade direta entre Velocidade_media_kmh e Congestionamento, mantendo a variável de interpretação mais direta para políticas de mobilidade (Congestionamento).
+
+- Por esses motivos, o Modelo A foi escolhido como especificação preferida e submetido a verificações adicionais (pressupostos e robustez).
+
+
+## **7. Verificação dos pressupostos do modelo selecionado e resolução de violações**
+
+Com o modelo selecionado (Modelo A) procedeu-se à verificação detalhada dos pressupostos do modelo de regressão linear múltipla: normalidade dos resíduos, homocedasticidade, independência (autocorrelação), presença de observações influentes e multicolinearidade remanescente. Quando alguma violação foi identificada, aplicaram-se estratégias de correção/checagem de robustez.
+
+### **7.1 Diagnósticos (modelo selecionado)**
+
+```{r diagnosticos_modelo, echo=TRUE}
+# Pressupostos no modelo escolhido (model_A)
+# (Se você prefere usar o modelo sem influentes como final, substitua model_A por model_noinf)
+summary(model_A)
+
+# 1) Normalidade dos resíduos
+shapiro.test(residuals(model_A))
+qqnorm(residuals(model_A)); qqline(residuals(model_A), col = "red")
+
+# 2) Homocedasticidade
+lmtest::bptest(model_A)
+plot(model_A, which = 1)   # resíduos vs fitted
+
+# 3) Autocorrelação
+lmtest::dwtest(model_A)
+
+# 4) Influência e outliers
+cooksd <- cooks.distance(model_A)
+plot(cooksd, type = "h", main = "Cook's distance")
+abline(h = 4/length(cooksd), col = "red", lty = 2)
+which(cooksd > 4/length(cooksd))   # índices influentes
+
+# 5) Multicolinearidade final
+car::vif(model_A)
+performance::check_collinearity(model_A)
+```
+
+**Observações a partir dos diagnósticos que rodamos:**
+
+- Normalidade: Shapiro-Wilk p ≈ 0.092 → sem evidência forte de violação; QQ-plot razoável.
+
+- Homoscedasticidade: Breusch-Pagan p ≈ 0.389 → sem evidência de heterocedasticidade significativa.
+
+- Autocorrelação: Durbin–Watson ≈ 1.94, p ≈ 0.153 → sem autocorrelação aparente.
+
+- Influência: algumas observações apresentaram Cook's > 4/n; após remoção dessas observações tivemos uma melhora do ajuste (modelo sem influentes model_noinf: R² ajustado subiu para ≈ 0.9279 e AIC caiu de ≈ 6679 para ≈ 6079). As mudanças nos coeficientes principais (Distância, Congestionamento, Ocorrencia_acidente, Tempo_espera) foram pequenas (< ~5%), o que indica robustez.
+
+- Multicolinearidade: os VIFs no modelo final ficaram em níveis aceitáveis (nenhum VIF extremo após a escolha entre Congestionamento e Velocidade_media_kmh).
+
+### **7.2 Tratamento / alternativas quando há violações**
+
+Caso alguma suposição não fosse atendida, as estratégias possíveis são:
+
+#### **7.2.1 Observações influentes:**
+
+Inspecionar manualmente (erros de entrada vs casos reais). Se forem entradas erradas, corrigir ou remover; se forem casos reais extremos, considerar modelagem robusta ou reportar análise de sensibilidade (fazer e apresentar resultados com e sem influentes).
+
+```{r}
+# Exemplo de reestimação sem observações influentes (já realizada)
+influential <- which(cooks.distance(model_A) > 4/length(cooks.distance(model_A)))
+model_noinf <- lm(formula(model_A), data = dados_final[-influential, ])
+summary(model_noinf)
+AIC(model_A, model_noinf)
+```
+
+#### **7.2.2 Heterocedasticidade:**
+
+Usar erros padrão robustos (sandwich) ou transformar a variável resposta (log).
+
+```{r}
+# Erros padrão robustos (HC3)
+library(sandwich); library(lmtest)
+coeftest(model_noinf, vcov = sandwich::vcovHC(model_noinf, type = "HC3"))
+
+# Transformação log (opcional — cuidado na interpretação)
+model_log <- lm(log(Tempo_viagem) ~ ., data = dados_final[-influential, c(all.vars(formula(model_A)))])
+summary(model_log)
+```
+
+
+#### **7.2.3 Resistência a outliers:**
+
+Estimadores robustos (M-estimators) como ```MASS::rlm.```
+
+```{r}
+library(MASS)
+rlm_mod <- rlm(formula(model_A), data = dados_final[-influential, ])
+summary(rlm_mod)
+broom::tidy(model_noinf) %>% rename(lm_est = estimate) %>%
+  left_join(broom::tidy(rlm_mod) %>% rename(rlm_est = estimate), by = "term")
+```
+
+#### **7.2.4 Multicolinearidade persistente:**
+
+considerar exclusão/combinação de variáveis redundantes, uso de componentes principais (PCR) ou penalização (ridge, lasso). Ex.: ```glmnet::cv.glmnet()``` para seleção penalizada.
+
+### **7.3 Decisão prática tomada neste trabalho**
+
+- Com base nos diagnósticos e nas comparações, optou-se por usar o modelo sem observações influentes (model_noinf) como modelo final para interpretação e predição, pelas razões abaixo:
+
+- Melhora do ajuste (R² ajustado de ≈ 0.904 → 0.928);
+
+- Redução substancial do AIC (≈ 6679 → ≈ 6079);
+
+- Coeficientes dos principais preditores permaneceram estáveis (mudanças pequenas), indicando que os resultados essenciais são robustos;
+
+- Resíduos satisfizeram os pressupostos (normalidade, homocedasticidade e independência dentro do que foi testado).
+
+**Interpretação final:**
+- Os pressupostos do MRLM foram verificados e, quando necessário, medidas de correção/robustez foram aplicadas. O modelo final (model_noinf) é válido para inferência e predição no contexto desta base de dados, mas recomenda-se apresentar, como material complementar, os resultados da análise de sensibilidade (modelo original, modelo sem influentes e regressão robusta).
+
+
+## 8. Estimações e Predições
+
+Uma vez validado o modelo final, podemos utilizá-lo para realizar **estimações pontuais e intervalares** da média da variável resposta, bem como **predições** de novos valores individuais de tempo de viagem. Essa etapa é importante para avaliar, de forma prática, como o modelo pode ser aplicado em situáticas específicas.
+
+### 8.1 Modelo final sem multicolinearidade
+
+Primeiro, vamos garantir que estamos usando o modelo correto (sem Velocidade_media_kmh):
+
+```{r}
+# Criar o modelo final sem Velocidade_media_kmh (Modelo A)
+model_final <- lm(Tempo_viagem ~ Distancia_km + Congestionamento + Hora_pico + 
+                  Tipo_transporte + Paradas_intermediarias + Chuva_mm + 
+                  Dia_semana + Ocorrencia_acidente + Tempo_espera, 
+                data = dados_final)
+
+# Verificar resumo do modelo
+summary(model_final)
+```
+
+### 8.2 Estimação de valores médios
+
+Para exemplificar, consideremos dois cenários distintos de viagem:
+
+1. **Cenário A:** viagem de 10 km, congestionamento = 5, em horário de pico, utilizando **Ônibus**, com 2 paradas intermediárias, sem ocorrência de acidente, tempo de espera = 8 minutos, em uma **terça-feira**, sem chuva.  
+2. **Cenário B:** viagem de 5 km, congestionamento = 2, fora do horário de pico, utilizando **Metrô**, sem paradas intermediárias, sem acidente, tempo de espera = 3 minutos, em um **domingo**, sem chuva.
+
+Para cada cenário, podemos obter a estimativa do tempo médio de viagem e o respectivo intervalo de confiança de 95%.
+
+```{r}
+# Cenário A
+cenario_A <- data.frame(
+  Distancia_km = 10,
+  Congestionamento = 5,
+  Hora_pico = "Sim",
+  Tipo_transporte = "Ônibus",
+  Paradas_intermediarias = 2,
+  Chuva_mm = 0,
+  Dia_semana = "Ter",
+  Ocorrencia_acidente = "Não",
+  Tempo_espera = 8
+)
+
+# Cenário B
+cenario_B <- data.frame(
+  Distancia_km = 5,
+  Congestionamento = 2,
+  Hora_pico = "Não",
+  Tipo_transporte = "Metrô",
+  Paradas_intermediarias = 0,
+  Chuva_mm = 0,
+  Dia_semana = "Dom",
+  Ocorrencia_acidente = "Não",
+  Tempo_espera = 3
+)
+
+# Estimações pontuais e intervalares
+estimativa_A <- predict(model_final, newdata = cenario_A, interval = "confidence", level = 0.95)
+estimativa_B <- predict(model_final, newdata = cenario_B, interval = "confidence", level = 0.95)
+
+cat("Cenário A - Estimativa do tempo médio de viagem:\n")
+print(estimativa_A)
+
+cat("\nCenário B - Estimativa do tempo médio de viagem:\n")
+print(estimativa_B)
+```
+
+### **8.3 Predições de novas observações**
+
+De forma análoga, podemos realizar predições individuais (incluindo o erro aleatório), obtendo intervalos de predição de 95% para novas viagens nos mesmos cenários:
+
+```{r}
+predicao_A <- predict(model_final, newdata = cenario_A, interval = "prediction", level = 0.95)
+predicao_B <- predict(model_final, newdata = cenario_B, interval = "prediction", level = 0.95)
+
+cat("Cenário A - Predição individual do tempo de viagem:\n")
+print(predicao_A)
+
+cat("\nCenário B - Predição individual do tempo de viagem:\n")
+print(predicao_B)
+```
+
+### **8.4 Análise comparativa dos resultados
+
+```{r}
+# Criar resumo comparativo
+resultados <- data.frame(
+  Cenário = c("A (Ônibus, horário pico)", "B (Metrô, fora pico)"),
+  Estimativa_Media = c(estimativa_A[1], estimativa_B[1]),
+  IC_Inferior = c(estimativa_A[2], estimativa_B[2]),
+  IC_Superior = c(estimativa_A[3], estimativa_B[3]),
+  Predicao_Individual = c(predicao_A[1], predicao_B[1]),
+  PI_Inferior = c(predicao_A[2], predicao_B[2]),
+  PI_Superior = c(predicao_A[3], predicao_B[3])
+)
+
+print(resultados)
+```
+
+### **8.4 Interpretação**
+
+- No **Cenário A** (viagem longa, em horário de pico, de ônibus, com paradas e espera), o modelo prevê um tempo médio de viagem substancialmente elevado, com intervalo de confiança relativamente estreito. O intervalo de predição é mais amplo, refletindo a variabilidade natural entre viagens individuais.
+
+- No **Cenário B** (viagem curta, fora do pico, de metrô, sem paradas e com pouca espera), o tempo estimado é consideravelmente menor, também com intervalo de confiança estreito e intervalo de predição mais amplo.
+
+**Diferença chave entre os intervalos:**
+
+- Intervalo de Confiança: estima a incerteza sobre a média do tempo de viagem para aquele cenário.
+
+- Intervalo de Predição: estima a incerteza para uma viagem individual específica.
+
+Esses resultados ilustram como o modelo pode ser usado tanto para prever a média esperada em cenários típicos quanto para prever a duração provável de uma viagem específica, sempre considerando a incerteza associada.
