@@ -482,11 +482,11 @@ considerar exclusão/combinação de variáveis redundantes, uso de componentes 
 - Os pressupostos do MRLM foram verificados e, quando necessário, medidas de correção/robustez foram aplicadas. O modelo final (model_noinf) é válido para inferência e predição no contexto desta base de dados, mas recomenda-se apresentar, como material complementar, os resultados da análise de sensibilidade (modelo original, modelo sem influentes e regressão robusta).
 
 
-## 8. Estimações e Predições
+## **8. Estimações e Predições**
 
 Uma vez validado o modelo final, podemos utilizá-lo para realizar **estimações pontuais e intervalares** da média da variável resposta, bem como **predições** de novos valores individuais de tempo de viagem. Essa etapa é importante para avaliar, de forma prática, como o modelo pode ser aplicado em situáticas específicas.
 
-### 8.1 Modelo final sem multicolinearidade
+### **8.1 Modelo final sem multicolinearidade**
 
 Primeiro, vamos garantir que estamos usando o modelo correto (sem Velocidade_media_kmh):
 
@@ -501,7 +501,7 @@ model_final <- lm(Tempo_viagem ~ Distancia_km + Congestionamento + Hora_pico +
 summary(model_final)
 ```
 
-### 8.2 Estimação de valores médios
+### **8.2 Estimação de valores médios**
 
 Para exemplificar, consideremos dois cenários distintos de viagem:
 
@@ -593,3 +593,16 @@ print(resultados)
 - Intervalo de Predição: estima a incerteza para uma viagem individual específica.
 
 Esses resultados ilustram como o modelo pode ser usado tanto para prever a média esperada em cenários típicos quanto para prever a duração provável de uma viagem específica, sempre considerando a incerteza associada.
+
+## **9. Conclusão**
+
+A análise exploratória e os modelos de regressão múltipla permitiram identificar fatores relevantes que influenciam o tempo de viagem. De forma geral, os resultados indicaram que:
+
+- **Distância percorrida** apresentou-se como o principal determinante do tempo de viagem, com impacto positivo e estatisticamente significativo em todos os modelos ajustados.  
+- **Condições do tráfego** também se mostraram relevantes, aumentando consideravelmente o tempo de deslocamento em situações de maior congestionamento.  
+- **Horários de pico** tiveram efeito adicional sobre o tempo de viagem, reforçando a importância de variáveis temporais na modelagem.  
+- Variáveis de controle, como tipo de via e condições climáticas, apresentaram influência secundária, mas ainda contribuíram para o ajuste do modelo.  
+
+Os diagnósticos do modelo indicaram bom ajuste e ausência de violações graves dos pressupostos da regressão múltipla.  
+
+Em síntese, a combinação entre distância, tráfego e horário de deslocamento explica de maneira satisfatória as variações no tempo de viagem. Tais resultados fornecem subsídios importantes para planejamento urbano e definição de políticas de mobilidade, especialmente na gestão do transporte em horários críticos.
