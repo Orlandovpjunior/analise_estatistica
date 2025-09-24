@@ -1,7 +1,7 @@
 ---
 title: "Relatório de Análise de Regressão Múltipla: Fatores que Influenciam o Tempo de Viagem no Transporte Urbano"
 subtitle: "Disciplina de Estatística Aplicada"
-author: "Orlando Junior e Jhonata Andrade"
+author: "Orlando Junior, Jhonata Andrade, Arthur Coelho"
 date: "`r format(Sys.Date(), '%d de %B de %Y')`"
 output: 
   html_document:
